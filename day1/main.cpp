@@ -7,13 +7,7 @@ int main(int argc, char** argv) {
     
     std::vector<int> numbers;
     for (std::string line; std::getline(reader, line);) {
-        std::cout << line << "\n";
-        int number = std::stoi(line);
-        numbers.push_back(number);
-    }
-
-    for (const auto number : numbers) {
-        std::cout << number << "\n";
+        numbers.push_back(std::stoi(line));
     }
 
     for (int i = 0; i < numbers.size(); ++i) {
