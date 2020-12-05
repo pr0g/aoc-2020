@@ -20,15 +20,6 @@ int main(int argc, char** argv) {
         reservations.begin(), reservations.end(),
         std::ostream_iterator<std::string>(std::cout, "\n"));
 
-    std::array<int, 128> seats;
-    std::iota(seats.begin(), seats.end(), 0);
-
-    // std::copy(
-    //     seats.begin(), seats.end(),
-    //     std::ostream_iterator<int>(std::cout, " "));
-
-    // 64 
-
     struct Partitioner
     {
         int lower;
@@ -62,16 +53,17 @@ int main(int argc, char** argv) {
             }
         }
 
-        std::cout << "row: upper: " << row.upper << "\n";
-        std::cout << "row: lower: " << row.lower << "\n";
-
-        std::cout << "seat: upper: " << seat.upper << "\n";
-        std::cout << "seat: lower: " << seat.lower << "\n";
-
         ids.push_back((row.upper * 8) + seat.lower);
     }
 
     std::cout << "part1: " << *std::max_element(ids.begin(), ids.end()) << "\n";
+
+    std::sort(ids.begin(), ids.end());
+    if (auto it = std::adjacent_find(ids.begin(), ids.end(), [](const auto& lhs, const auto& rhs){
+        return (rhs - lhs) > 1;
+    }); it != ids.end()) {
+        std::cout << "part2: " << *it + 1 << "\n";
+    }
 
     return 0;
 }
