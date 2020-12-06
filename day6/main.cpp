@@ -8,7 +8,7 @@
 #include <numeric>
 
 template<class I, class T, class R, class M>
-auto adjacent_reduce(I f, I l, T init, R r, M m) {
+auto adjacent_transform_reduce(I f, I l, T init, R r, M m) {
     return std::inner_product(f, --l, ++f, init, r, m);
 }
 
@@ -41,16 +41,6 @@ int main(int argc, char** argv) {
     // for (const auto& form : forms) {
     //     std::cout << form << "\n";
     // }
-
-    std::cout << "---\n";
-
-    // for (const auto& adv_form : adv_forms) {
-    //     for (const auto& line : adv_form) {
-    //         std::cout << line << "\n";
-    //     }
-    //     std::cout << "\n";
-    // }
-
     // std::cout << "---\n";
 
     int part1 = 0;
@@ -62,16 +52,12 @@ int main(int argc, char** argv) {
 
     std::cout << "part1: " << part1 << "\n";
 
-    int part2 = 0;
-
     adv_forms_t next_adv_forms;
-    next_adv_forms.resize(adv_forms.size());
-
     std::transform(
-        adv_forms.begin(), adv_forms.end(), next_adv_forms.begin(),
+        adv_forms.begin(), adv_forms.end(),
+        std::back_inserter(next_adv_forms),
         [](const adv_form_t& adv_form) {
             auto next_adv_form = adv_form;
-
             std::transform(
                 next_adv_form.begin(), next_adv_form.end(),
                 next_adv_form.begin(),
@@ -80,37 +66,18 @@ int main(int argc, char** argv) {
                     std::sort(l.begin(), l.end());
                     return l;
                 });
-
             return next_adv_form;
         });
     
-    // for (const auto& adv_form : next_adv_forms) {
-    //     for (const auto line : adv_form) {
-    //         std::cout << line << "\n";
-    //     }
-    //     std::cout << "\n";
-    // }
-
-    // std::set_intersection
-
-    // adv_form_t union_form;
-
-    // adv_forms_t union_adv_forms;
-    // union_adv_forms.resize(next_adv_forms.size());
-
-    std::vector<std::string> union_forms;
-
+    std::vector<std::string> intersection_forms;
     std::transform(
         next_adv_forms.begin(), next_adv_forms.end(),
-        std::back_inserter(union_forms),
+        std::back_inserter(intersection_forms),
         [](const adv_form_t& adv_form) {
             auto next_adv_form = adv_form;
-
-            auto ans = adjacent_reduce(
+            auto intersection_form = adjacent_transform_reduce(
                 next_adv_form.begin(), next_adv_form.end(),
                 next_adv_form.front(),
-                // next_adv_forms[0][0],
-                // std::string{},
                 [](auto acc, const auto& str) {
                     auto r = std::string{};
                     std::set_intersection(
@@ -126,60 +93,20 @@ int main(int argc, char** argv) {
                     return r;
                 });
 
-            return ans;
+            return intersection_form;
         });
-
-    std::cout << "unions" << "\n";
-    for (const auto& union_form : union_forms) {
-        std::cout << union_form << "\n";
-    }
 
     auto part2_algo =
         std::accumulate(
-            union_forms.begin(), union_forms.end(), 0,
-            [](int acc, const std::string& union_form) {
-                return acc + union_form.size();
+            intersection_forms.begin(), intersection_forms.end(), 0,
+            [](int acc, const std::string& intersection_form) {
+                return acc + intersection_form.size();
             });
 
     std::cout << "part2 algo: " << part2_algo << "\n";
 
-    auto ans = adjacent_reduce(
-    // std::adjacent_difference(
-    // std::partial_sum(
-        next_adv_forms[0].begin(), next_adv_forms[0].end(),
-        next_adv_forms[0][0],
-        // next_adv_forms[0].begin(),
-        // std::back_inserter(union_form),
-        [](auto acc, const auto& str) {
-            auto r = std::string{};
-            std::set_intersection(
-                acc.begin(), acc.end(), str.begin(), str.end(),
-                std::back_inserter(r));
-            return r;
-        },
-        [](auto& lhs, auto& rhs) {
-            auto r = std::string{};
-            std::set_intersection(
-                lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-                std::back_inserter(r));
-            return r;
-        });
-
-    // std::cout << "next" << "\n";
-
-    // for (const auto& adv_form : next_adv_forms) {
-    //     for (const auto line : adv_form) {
-    //         std::cout << line << "\n";
-    //     }
-    //     std::cout << "\n";
-    // }
-
-    // for (const auto& line : union_form) {
-    //     std::cout << line << "\n";
-    // }
-
-    // std::cout << "ans: " << ans << "\n";
-    
+    // loop version
+    int part2 = 0;
     for (auto& adv_form : adv_forms) {
         // start on first letter, count it in all other groups
         for (int i = 0; i < adv_form[0].size(); ++i) {
