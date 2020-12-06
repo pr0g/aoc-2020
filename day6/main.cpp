@@ -6,6 +6,7 @@
 #include <sstream>
 #include <array>
 #include <numeric>
+#include <chrono>
 
 template<class I, class T, class R, class M>
 auto adjacent_transform_reduce(I f, I l, T init, R r, M m) {
@@ -52,66 +53,50 @@ int main(int argc, char** argv) {
 
     std::cout << "part1: " << part1 << "\n";
 
-    adv_forms_t next_adv_forms;
-    std::transform(
-        adv_forms.begin(), adv_forms.end(),
-        std::back_inserter(next_adv_forms),
-        [](const adv_form_t& adv_form) {
-            auto next_adv_form = adv_form;
-            std::transform(
-                next_adv_form.begin(), next_adv_form.end(),
-                next_adv_form.begin(),
-                [](const auto& line) {
-                    auto l = line;
-                    std::sort(l.begin(), l.end());
-                    return l;
-                });
-            return next_adv_form;
-        });
-    
-    std::vector<std::string> intersection_forms;
-    std::transform(
-        next_adv_forms.begin(), next_adv_forms.end(),
-        std::back_inserter(intersection_forms),
-        [](const adv_form_t& adv_form) {
-            auto next_adv_form = adv_form;
-            auto intersection_form = adjacent_transform_reduce(
-                next_adv_form.begin(), next_adv_form.end(),
-                next_adv_form.front(),
-                [](auto acc, const auto& str) {
-                    auto r = std::string{};
-                    std::set_intersection(
-                        acc.begin(), acc.end(), str.begin(), str.end(),
-                        std::back_inserter(r));
-                    return r;
-                },
-                [](auto& lhs, auto& rhs) {
-                    auto r = std::string{};
-                    std::set_intersection(
-                        lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-                        std::back_inserter(r));
-                    return r;
-                });
+    auto intersect = [](auto&& lhs, const auto& rhs) {
+        auto intersection = std::string{};
+        std::set_intersection(
+            lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
+            std::back_inserter(intersection));
+        return intersection;
+    };
 
+    auto start_algo = std::chrono::steady_clock::now();
+    auto part2_algo = std::transform_reduce(
+        adv_forms.begin(), adv_forms.end(), 0,
+        [](int acc, const std::string& intersection_form) {
+            return acc + intersection_form.size();
+        },
+        [&intersect](adv_form_t& adv_form) {
+            std::for_each(
+                adv_form.begin(), adv_form.end(),
+                [](auto& line) {
+                    std::sort(line.begin(), line.end());
+                });
+            auto intersection_form = adjacent_transform_reduce(
+                adv_form.begin(), adv_form.end(),
+                adv_form.front(),
+                [&intersect](auto acc, const auto& str) {
+                    return intersect(std::move(acc), str);
+                },
+                [&intersect](const auto& lhs, const auto& rhs) {
+                    return intersect(lhs, rhs);
+                });
             return intersection_form;
         });
-
-    auto part2_algo =
-        std::accumulate(
-            intersection_forms.begin(), intersection_forms.end(), 0,
-            [](int acc, const std::string& intersection_form) {
-                return acc + intersection_form.size();
-            });
+    auto stop_algo = std::chrono::steady_clock::now();
+    std::chrono::duration<double> algo_diff = stop_algo - start_algo;
+    std::cout << "algo duration " << std::setw(9) << algo_diff.count() << "s\n";
 
     std::cout << "part2 algo: " << part2_algo << "\n";
 
     // loop version
+    auto start_loop = std::chrono::steady_clock::now();
     int part2 = 0;
     for (auto& adv_form : adv_forms) {
         // start on first letter, count it in all other groups
         for (int i = 0; i < adv_form[0].size(); ++i) {
             char c = adv_form[0][i];
-
             bool all = true;
             for (int j = 1; j < adv_form.size(); ++j) {
                 auto it = std::find(adv_form[j].begin(), adv_form[j].end(), c);
@@ -126,6 +111,9 @@ int main(int argc, char** argv) {
             }
         }
     }
+    auto stop_loop = std::chrono::steady_clock::now();
+    std::chrono::duration<double> loop_diff = stop_loop - start_loop;
+    std::cout << "loop duration " << std::setw(9) << loop_diff.count() << "s\n";
 
     // 3550
     std::cout << "part2: " << part2 << "\n";
