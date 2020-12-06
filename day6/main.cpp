@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
                 [](auto& line) {
                     std::sort(line.begin(), line.end());
                 });
-            auto intersection_form = adjacent_transform_reduce(
+            return adjacent_transform_reduce(
                 adv_form.begin(), adv_form.end(),
                 adv_form.front(),
                 [&intersect](auto acc, const auto& str) {
@@ -82,7 +82,6 @@ int main(int argc, char** argv) {
                 [&intersect](const auto& lhs, const auto& rhs) {
                     return intersect(lhs, rhs);
                 });
-            return intersection_form;
         });
     auto stop_algo = std::chrono::steady_clock::now();
     std::chrono::duration<double> algo_diff = stop_algo - start_algo;
