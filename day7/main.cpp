@@ -7,6 +7,7 @@
 #include <array>
 #include <numeric>
 #include <unordered_map>
+#include <unordered_set>
 
 static inline void ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
@@ -110,6 +111,25 @@ int main(int argc, char** argv) {
             std::cout << "  " << in.first << " -- " << in.second << "\n";
         }
     }
+
+    std::deque<std::string> search_names;
+    search_names.push_back("shiny gold"s);
+    std::unordered_set<std::string> unique_bags;
+
+    while(!search_names.empty()) {
+        for (auto it : all_bags) {
+            for (auto in : it.second) {
+                if (in.first == search_names.front()) {
+                    std::cout << it.first << "\n";
+                    search_names.push_back(it.first);
+                    unique_bags.insert(it.first);
+                }
+            }
+        }
+        search_names.pop_front();
+    }
+
+    std::cout << "part1: " << unique_bags.size() << "\n";
 
     return 0;
 }
