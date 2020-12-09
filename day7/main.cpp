@@ -168,9 +168,9 @@ int main(int argc, char** argv) {
                 }
         };
 
-        traverse(bags_t{{"shiny gold"s, 1}}, all_bags, 1);
+        traverse(all_bags["shiny gold"s], all_bags, 1);
 
-        std::cout << "part2: " << everything - 1 << "\n";
+        std::cout << "part2: " << everything << "\n";
     }
 
     return 0;
