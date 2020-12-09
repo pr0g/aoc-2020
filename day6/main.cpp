@@ -10,7 +10,7 @@
 
 template<class I, class T, class R, class M>
 auto adjacent_transform_reduce(I f, I l, T init, R r, M m) {
-    return std::inner_product(f, --l, ++f, init, r, m);
+    return std::transform_reduce(f, --l, ++f, init, r, m);
 }
 
 int main(int argc, char** argv) {
