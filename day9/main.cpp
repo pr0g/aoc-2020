@@ -40,5 +40,32 @@ end:
 
     std::cout << "part1: " << xmas[offset] << "\n";
 
+    int64_t key = 258585477;
+    int64_t result;
+
+    for (bool range_found = false; !range_found;) {
+        for (int window = 4;!range_found;window++) {
+            for (int64_t start = 0; start < xmas.size() - window; ++start) {
+                int64_t total {0};
+                for (int64_t i = start; i < start + window; ++i) {
+                    total = total + xmas[i];
+                }
+                if (total == key) {
+                    std::vector<int64_t> range;
+                    for (int i = start; i < start + window; ++i) {
+                        range.push_back(xmas[i]);
+                    }
+                    auto minmax = std::minmax_element(std::begin(range), std::end(range));
+                    result = *minmax.first + *minmax.second;
+                    goto end2;
+                }
+            }
+        }
+    }
+
+end2:
+
+    std::cout << "part2: " << result << "\n";
+
     return 0;
 }
