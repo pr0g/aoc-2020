@@ -14,12 +14,9 @@ int main(int argc, char** argv) {
     std::ifstream reader("input.txt");
 
     std::vector<int> joltages;
+    joltages.push_back(0); // starting voltage
     for (std::string line; std::getline(reader, line);) {
         joltages.push_back(stoi(line));
-    }
-
-    for (const auto& joltage : joltages) {
-        std::cout << joltage << "\n";
     }
 
     // add in own adapter
@@ -27,7 +24,12 @@ int main(int argc, char** argv) {
     joltages.push_back(max + 3);
 
     std::sort(joltages.begin(), joltages.end());
-    std::vector<int> differences;
+
+    for (const auto& joltage : joltages) {
+        std::cout << joltage << "\n";
+    }
+
+    std::vector<int64_t> differences;
     std::adjacent_difference(
         joltages.begin(), joltages.end(), std::back_inserter(differences));
 
@@ -49,8 +51,45 @@ int main(int argc, char** argv) {
 
     std::cout << "ones: " << ones << "\n";
     std::cout << "threes: " << threes << "\n";
-
     std::cout << "part1: " << ones * threes  << "\n";
+
+    std::vector<int64_t> diffs = std::accumulate(
+        differences.begin(), differences.end(), std::vector<int64_t>{},
+        [counter = 0](auto acc, auto val) mutable {
+            if (val == 1) {
+                counter++;
+            } else {
+                if (counter > 1) {
+                    acc.push_back(counter);
+                }
+                counter = 0;
+            }
+            return acc;
+        });
+
+    // routes possible to take
+    auto permutations = [](auto input) {
+        if (input == 4) {
+            return int64_t(7);
+        }
+        if (input == 3) {
+            return int64_t(4);
+        }
+        if (input == 2) {
+            return int64_t(2);
+        }
+        return int64_t(0);
+    };
+
+    auto part2 = std::accumulate(
+        diffs.begin(), diffs.end(), int64_t(1),
+        [permutations](auto acc, auto val) {
+            acc *= permutations(val);
+            return acc;
+        }
+    );
+
+    std::cout << "part2: " << part2 << "\n";
 
     return 0;
 }
