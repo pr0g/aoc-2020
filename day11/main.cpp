@@ -10,6 +10,10 @@
 #include <unordered_set>
 #include <variant>
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 int main(int argc, char** argv) {
     std::ifstream reader("input.txt");
 
@@ -45,18 +49,38 @@ int main(int argc, char** argv) {
     };
 
     auto adjacent_seats_fn = [&grid](int row, int col, int width, int height) {
-        offset_t offsets[] = {
+        std::vector<offset_t> offsets = {
             {0, 1}, {1, 1}, {1, 0},
             {1, -1}, {0, -1}, {-1, -1},
             {-1, 0}, {-1, 1}};
 
         std::vector<change_t> seats;
         offset_t start{row, col};
-        for (const auto offset : offsets) {
-            const offset_t next_offset = {start.r + offset.r, start.c + offset.c};
-            if (next_offset.r >= 0 && next_offset.r < height
-                && next_offset.c >= 0 && next_offset.c < width) {
-                seats.push_back(change_t{next_offset.r, next_offset.c, grid[next_offset.r][next_offset.c]});
+        // part 2 - multiple iterations (part 1 only one)
+        while (!offsets.empty()) {
+            for (auto it = offsets.begin(); it != offsets.end();) {
+                auto offset = *it;
+                const offset_t next_offset = {start.r + offset.r, start.c + offset.c};
+                if (next_offset.r >= 0 && next_offset.r < height
+                    && next_offset.c >= 0 && next_offset.c < width) {
+                    if (grid[next_offset.r][next_offset.c] == '#') {
+                        seats.push_back(
+                            change_t{next_offset.r, next_offset.c,
+                            grid[next_offset.r][next_offset.c]});
+                        it = offsets.erase(it);
+                    } else if (grid[next_offset.r][next_offset.c] == 'L') {
+                        it = offsets.erase(it);
+                    } else {
+                        it++;
+                    }
+                } else {
+                    it = offsets.erase(it);
+                }
+            }
+
+            for (auto& offset : offsets) {
+                offset.r += sgn(offset.r);
+                offset.c += sgn(offset.c);
             }
         }
         return seats;
@@ -77,7 +101,8 @@ int main(int argc, char** argv) {
                 if (grid[row][col] == 'L' && occupied == 0) {
                     changes.push_back(change_t{row, col, '#'});
                 }
-                if (grid[row][col] == '#' && occupied >= 4) {
+                // part 1 (>= 4), part 2 (>= 5)
+                if (grid[row][col] == '#' && occupied >= 5) {
                     changes.push_back(change_t{row, col, 'L'});
                 }
             }
@@ -125,7 +150,7 @@ int main(int argc, char** argv) {
     std::cout << "---\n";
 
     std::cout << "iterations: " << iterations << "\n";
-    std::cout << "part1: " << occupied_seats << "\n";
+    std::cout << "part2: " << occupied_seats << "\n";
 
     return 0;
 }
