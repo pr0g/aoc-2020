@@ -47,6 +47,21 @@ std::string apply_mask(const std::string& mask, const std::string& value) {
     return result;
 }
 
+std::string apply_mask_v2(const std::string& mask, const std::string& value) {
+    std::string result;
+    result.resize(value.size());
+    for (int i = 0; i < value.size(); ++i) {
+        if (mask[i] == '0') {
+            result[i] = value[i];
+        } else if (mask[i] == '1') {
+            result[i] = '1';
+        } else {
+            result[i] = 'X';
+        }
+    }
+    return result;
+}
+
 // helper type for the visitor #4
 template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 // explicit deduction guide (not needed as of C++20)
@@ -89,16 +104,29 @@ int main(int argc, char** argv) {
     }
 
     mask_t current_mask;
-    std::unordered_map<int32_t, int64_t> memory;
+    std::unordered_map<int64_t, int64_t> memory;
     for (auto& instruction: instructions) {
         std::visit(overloaded {
             [&memory, &current_mask](const value_t& value) {
-                std::cout << "addr: " << value.address << " val: " << value.value << "\n";
-                auto num = decimal_from_binary(apply_mask(current_mask.mask, binary_from_decimal(value.value)));
-                memory[value.address] = num;
+                const auto floating = apply_mask_v2(current_mask.mask, binary_from_decimal(value.address));
+                auto x_count = std::count_if(floating.begin(), floating.end(), [](const char c){ return c == 'X'; });
+
+                const auto iterations = std::pow(2, x_count);
+                for (uint64_t i = 0; i < iterations; ++i) {
+                    auto next_floating = floating;
+                    std::string str = binary_from_decimal(i);
+
+                    int64_t ns = str.size() - 1;
+                    for (int64_t s = floating.size() - 1; s >= 0; --s) {
+                        if (floating[s] == 'X') {
+                            next_floating[s] = str[ns--];
+                        }
+                    }
+                    auto addr = decimal_from_binary(next_floating);
+                    memory[addr] = value.value;
+                }
             },
-            [&memory, &current_mask](const mask_t& mask) {
-                std::cout << "mask: " << mask.mask << "\n";
+            [&current_mask](const mask_t& mask) {
                 current_mask = mask;
             },
         }, instruction);
@@ -109,7 +137,7 @@ int main(int argc, char** argv) {
         total += address.second;
     }
 
-    std::cout << "part1: " << total << "\n";
+    std::cout << "part2: " << total << "\n";
 
     return 0;
 }
