@@ -38,28 +38,42 @@ int main(int argc, char** argv) {
         std::cout << number << "\n";
     }
 
-    std::vector<int> numbers_offsets;
-    numbers_offsets.reserve(nums.size());
-    for (int num : nums) {
-        numbers_offsets.push_back(num);
+    struct info_t
+    {
+        int64_t offsets[2] = {-1, -1};
+    };
+
+    std::unordered_map<int64_t, info_t> number_to_offset;
+    std::unordered_map<int64_t, int64_t> offset_to_number;
+
+    for (int64_t i = 0; i < nums.size(); ++i) {
+        number_to_offset.insert({nums[i], {{-1, i}}});
+        offset_to_number.insert({i, nums[i]});
     }
 
-    for (int i = nums.size(); i < 2020; ++i) {
-        auto prev_number = numbers_offsets[i - 1];
-        auto repeats = std::count(numbers_offsets.begin(), numbers_offsets.end(), prev_number);
-        if (repeats > 1) {
-            auto n1 = std::find(numbers_offsets.rbegin(), numbers_offsets.rend(), prev_number);
-            auto n2 = std::find(n1 + 1, numbers_offsets.rend(), prev_number);
-            auto off1 = std::distance(n1, numbers_offsets.rend());
-            auto off2 = std::distance(n2, numbers_offsets.rend());
-            auto next = off1 - off2;
-            numbers_offsets.push_back(next);
+    for (int64_t i = nums.size(); i < 30000000; ++i) {
+        auto prev_number = offset_to_number[i - 1];
+        auto info = number_to_offset[prev_number];
+            if (info.offsets[0] != -1 && info.offsets[1] != -1) {
+                auto next = info.offsets[1] - info.offsets[0];
+                auto off = number_to_offset[next];
+                number_to_offset.erase(next);
+                off.offsets[0] = off.offsets[1];
+                off.offsets[1] = i;
+                number_to_offset.insert({next, off});
+                offset_to_number[i] = next;
         } else {
-            numbers_offsets.push_back(0);
+                auto off = number_to_offset[0];
+                number_to_offset.erase(0);
+                off.offsets[0] = off.offsets[1];
+                off.offsets[1] = i;
+                number_to_offset.insert({0, off});
+                offset_to_number[i] = 0;
         }
     }
 
-    std::cout << "part1: " << numbers_offsets[2019] << "\n";
+    std::cout << "part1: " << offset_to_number[2019] << "\n";
+    std::cout << "part2: " << offset_to_number[29999999] << "\n";
 
     return 0;
 }
