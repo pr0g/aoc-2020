@@ -136,8 +136,7 @@ int main(int argc, char** argv) {
 
     std::vector<int64_t> invalid_numbers;
      for (auto it = nearby_tickets.begin(); it != nearby_tickets.end();) {
-//    for (int i = 0; i < nearby_tickets.size();) {
-        const auto ticket = *it;//nearby_tickets[i];
+        const auto ticket = *it;
         bool remove = false;
         for (const auto& number : ticket) {
             bool valid = false;
@@ -157,10 +156,7 @@ int main(int argc, char** argv) {
 
         if (remove) {
             it = nearby_tickets.erase(it);
-//            nearby_tickets[i] = nearby_tickets.back();
-//            nearby_tickets.pop_back();
         } else {
-//            ++i;
             ++it;
         }
 
@@ -174,12 +170,6 @@ int main(int argc, char** argv) {
     }
 
     std::cout << "part1: " << invalid_total << "\n";
-
-    struct Hash {
-       size_t operator() (const range_pair_t &rp) const {
-         return std::hash<std::string>{}(rp.name);
-       }
-    };
 
     struct groups_t
     {
