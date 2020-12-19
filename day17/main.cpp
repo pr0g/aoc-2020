@@ -165,41 +165,13 @@ int main(int argc, char** argv) {
     }
 
     int active = 0;
-    int y_max = INT_MIN;
-    int x_min = INT_MAX;
-    int y_min = INT_MAX;
-    int x_max = INT_MIN;
     for (const auto coord : next_grid) {
         if (coord.second) {
             active++;
-            y_max = std::max(coord.first.y, y_max);
-            x_min = std::min(coord.first.x, x_min);
-            x_max = std::max(coord.first.x, x_max);
-            y_min = std::min(coord.first.y, y_min);
         }
     }
 
-    std::cout << "x: " << x_min << "\n";
-    std::cout << "y: " << y_max << "\n";
-    std::cout << "active: " << active << "\n";
-
-    for (const auto coord : next_grid) {
-        if (coord.first.z == 0 && coord.first.x <= 1 && coord.first.x >= -1 && coord.first.y >= -1 && coord.first.y <= 1) {
-            std::cout << "{" << coord.first.x << ", " << coord.first.y << ", " << coord.first.z << "} - " << coord.second << "\n";
-        }
-    }
-
-    for (int y = y_max; y >= y_min; --y) {
-        for (int x = x_min; x <= x_max; ++x) {
-            auto state = grid[coord_t{x, y, 0}];
-            std::cout << (state ? '#' : '.');
-        }
-        std::cout << "\n";
-    }
-
-    for (const auto coord : next_grid) {
-        
-    }
+    std::cout << "part1 : " << active << "\n";
 
     return 0;
 }
