@@ -78,13 +78,13 @@ int main(int argc, char** argv) {
     for (int y = 0; y < symbol_grid.size(); ++y) {
         for (int x = 0; x < symbol_grid[y].size(); ++x) {
             const char c = symbol_grid[y][x];
-            grid.insert({coord_t{x-1, y-1, 0}, on(c)});
+            grid.insert({coord_t{x, y, 0}, on(c)});
         }
     }
 
-    for (int z = -2; z <= 2; ++z) {
-        for (int y = -2; y <= 2; ++y) {
-            for (int x = -2; x <= 2; ++x) {
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= (int)symbol_grid.size(); ++y) {
+            for (int x = -1; x <= (int)symbol_grid.size(); ++x) {
                 auto c = grid.find(coord_t{x, y, z});
                 if (c == grid.end()) {
                     grid.insert({coord_t{x, y, z}, false});
