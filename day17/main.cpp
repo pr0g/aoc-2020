@@ -20,17 +20,17 @@ inline void hash_combine(std::size_t& seed, const T& v)
 
 struct coord_t
 {
-    int x, y, z;
+    int x, y, z, w;
 };
 
 bool operator==(const coord_t& lhs, const coord_t& rhs)
 {
-    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z;
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
 }
 
 coord_t operator+(const coord_t& lhs, const coord_t& rhs)
 {
-    return {lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
+    return {lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w};
 }
 
 int main(int argc, char** argv) {
@@ -50,13 +50,6 @@ int main(int argc, char** argv) {
         symbol_grid.push_back(symbols);
     }
 
-//    for (auto& i : symbol_grid) {
-//        for (char j : i) {
-//            std::cout << j;
-//        }
-//        std::cout << "\n";
-//    }
-
     struct coord_hash_t
     {
         std::size_t operator()(const coord_t& coord) const noexcept
@@ -65,6 +58,7 @@ int main(int argc, char** argv) {
             hash_combine(seed, coord.x);
             hash_combine(seed, coord.y);
             hash_combine(seed, coord.z);
+            hash_combine(seed, coord.w);
             return seed;
         }
     };
@@ -78,16 +72,18 @@ int main(int argc, char** argv) {
     for (int y = 0; y < symbol_grid.size(); ++y) {
         for (int x = 0; x < symbol_grid[y].size(); ++x) {
             const char c = symbol_grid[y][x];
-            grid.insert({coord_t{x, y, 0}, on(c)});
+            grid.insert({coord_t{x, y, 0, 0}, on(c)});
         }
     }
 
-    for (int z = -1; z <= 1; ++z) {
-        for (int y = -1; y <= (int)symbol_grid.size(); ++y) {
-            for (int x = -1; x <= (int)symbol_grid.size(); ++x) {
-                auto c = grid.find(coord_t{x, y, z});
-                if (c == grid.end()) {
-                    grid.insert({coord_t{x, y, z}, false});
+    for (int w = -1; w <= 1; ++w) {
+        for (int z = -1; z <= 1; ++z) {
+            for (int y = -1; y <= (int)symbol_grid.size(); ++y) {
+                for (int x = -1; x <= (int)symbol_grid.size(); ++x) {
+                    auto c = grid.find(coord_t{x, y, z, w});
+                    if (c == grid.end()) {
+                        grid.insert({coord_t{x, y, z, w}, false});
+                    }
                 }
             }
         }
@@ -97,34 +93,94 @@ int main(int argc, char** argv) {
         [](grid_t& grid) {
             grid_t grid_copy = grid;
             coord_t offsets[] = {
-                {1, 0, 0},
-                {1, -1, 0},
-                {0, -1, 0},
-                {-1, -1, 0},
-                {-1, 0, 0},
-                {-1, 1, 0},
-                {0, 1, 0},
-                {1, 1, 0},
+                {1, 0, 0, 0},
+                {1, -1, 0, 0},
+                {0, -1, 0, 0},
+                {-1, -1, 0, 0},
+                {-1, 0, 0, 0},
+                {-1, 1, 0, 0},
+                {0, 1, 0, 0},
+                {1, 1, 0, 0},
                 //
-                {0, 0, 1},
-                {1, 0, 1},
-                {1, -1, 1},
-                {0, -1, 1},
-                {-1, -1, 1},
-                {-1, 0, 1},
-                {-1, 1, 1},
-                {0, 1, 1},
-                {1, 1, 1},
+                {0, 0, 1, 0},
+                {1, 0, 1, 0},
+                {1, -1, 1, 0},
+                {0, -1, 1, 0},
+                {-1, -1, 1, 0},
+                {-1, 0, 1, 0},
+                {-1, 1, 1, 0},
+                {0, 1, 1, 0},
+                {1, 1, 1, 0},
                 //
-                {0, 0, -1},
-                {1, 0, -1},
-                {1, -1, -1},
-                {0, -1, -1},
-                {-1, -1, -1},
-                {-1, 0, -1},
-                {-1, 1, -1},
-                {0, 1, -1},
-                {1, 1, -1}
+                {0, 0, -1, 0},
+                {1, 0, -1, 0},
+                {1, -1, -1, 0},
+                {0, -1, -1, 0},
+                {-1, -1, -1, 0},
+                {-1, 0, -1, 0},
+                {-1, 1, -1, 0},
+                {0, 1, -1, 0},
+                {1, 1, -1, 0},
+                ///
+                {0, 0, 0, 1},
+                {1, 0, 0, 1},
+                {1, -1, 0, 1},
+                {0, -1, 0, 1},
+                {-1, -1, 0, 1},
+                {-1, 0, 0, 1},
+                {-1, 1, 0, 1},
+                {0, 1, 0, 1},
+                {1, 1, 0, 1},
+                //
+                {0, 0, 1, 1},
+                {1, 0, 1, 1},
+                {1, -1, 1, 1},
+                {0, -1, 1, 1},
+                {-1, -1, 1, 1},
+                {-1, 0, 1, 1},
+                {-1, 1, 1, 1},
+                {0, 1, 1, 1},
+                {1, 1, 1, 1},
+                //
+                {0, 0, -1, 1},
+                {1, 0, -1, 1},
+                {1, -1, -1, 1},
+                {0, -1, -1, 1},
+                {-1, -1, -1, 1},
+                {-1, 0, -1, 1},
+                {-1, 1, -1, 1},
+                {0, 1, -1, 1},
+                {1, 1, -1, 1},
+                ///
+                {0, 0, 0, -1},
+                {1, 0, 0, -1},
+                {1, -1, 0, -1},
+                {0, -1, 0, -1},
+                {-1, -1, 0,-1},
+                {-1, 0, 0, -1},
+                {-1, 1, 0, -1},
+                {0, 1, 0, -1},
+                {1, 1, 0, -1},
+                //
+                {0, 0, 1, -1},
+                {1, 0, 1, -1},
+                {1, -1, 1, -1},
+                {0, -1, 1, -1},
+                {-1, -1, 1, -1},
+                {-1, 0, 1, -1},
+                {-1, 1, 1, -1},
+                {0, 1, 1, -1},
+                {1, 1, 1, -1},
+                //
+                {0, 0, -1, -1},
+                {1, 0, -1, -1},
+                {1, -1, -1, -1},
+                {0, -1, -1, -1},
+                {-1, -1, -1, -1},
+                {-1, 0, -1, -1},
+                {-1, 1, -1, -1},
+                {0, 1, -1, -1},
+                {1, 1, -1, -1},
             };
 
         for (const auto& coord : grid) {
@@ -171,7 +227,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << "part1 : " << active << "\n";
+    std::cout << "part2 : " << active << "\n";
 
     return 0;
 }
