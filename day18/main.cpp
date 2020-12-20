@@ -138,17 +138,13 @@ int main(int argc, char** argv) {
                     }
                 },
                 [&op_stack, &output](add_t) {
-                    while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
-                        || std::holds_alternative<multiply_t>(op_stack.top()))) {
-                        operation_t op = op_stack.top();
-                        op_stack.pop();
-                        output.push(op);
-                    }
+                    // don't bother checking other operators here as add is
+                    // the highest precedence
                     op_stack.push(add_t{});
                 },
                 [&op_stack, &output](multiply_t) {
-                    while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
-                        || std::holds_alternative<multiply_t>(op_stack.top()))) {
+                    // part2 (only check add is on the stack as it's higher precedence
+                    while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top()))) {
                         operation_t op = op_stack.top();
                         op_stack.pop();
                         output.push(op);
@@ -199,7 +195,7 @@ int main(int argc, char** argv) {
         part1 += std::get<number_t>(rp.top()).value;
     }
 
-    std::cout << "part1: " << part1 << '\n';
+    std::cout << "part2: " << part1 << '\n';
 
     return 0;
 }
