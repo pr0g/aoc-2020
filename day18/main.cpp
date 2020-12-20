@@ -137,10 +137,22 @@ int main(int argc, char** argv) {
                     op_stack.pop();
                 }
             },
-            [&op_stack](add_t) {
+            [&op_stack, &output](add_t) {
+                while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
+                    || std::holds_alternative<multiply_t>(op_stack.top()))) {
+                    operation_t op = op_stack.top();
+                    op_stack.pop();
+                    output.push(op);
+                }
                 op_stack.push(add_t{});
             },
-            [&op_stack](multiply_t) {
+            [&op_stack, &output](multiply_t) {
+                while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
+                    || std::holds_alternative<multiply_t>(op_stack.top()))) {
+                    operation_t op = op_stack.top();
+                    op_stack.pop();
+                    output.push(op);
+                }
                 op_stack.push(multiply_t{});
             },
             [&op_stack](sub_t) {
