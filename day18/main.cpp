@@ -14,7 +14,7 @@
 
 struct number_t
 {
-    int value;
+    int64_t value;
 };
 
 struct open_paren_t
@@ -68,18 +68,19 @@ int main(int argc, char** argv) {
         lines.push_back(line);
     }
 
-    std::vector<operation_t> operations;
-    auto store_number = [&operations](mode_e& mode, std::string& number_buffer) {
-        if (mode == mode_e::value) {
-            int number = stoi(number_buffer);
-            number_t num {number};
-            operations.emplace_back(num);
-            mode = mode_e::none;
-            number_buffer.clear();
-        }
-    };
-
+    int64_t part1 = 0;
     for (const auto& line : lines) {
+        std::vector<operation_t> operations;
+        auto store_number = [&operations](mode_e& mode, std::string& number_buffer) {
+            if (mode == mode_e::value) {
+                int number = stoi(number_buffer);
+                number_t num {number};
+                operations.emplace_back(num);
+                mode = mode_e::none;
+                number_buffer.clear();
+            }
+        };
+
         mode_e active_mode = mode_e::none;
         std::string number_buffer;
         for (const auto& symbol : line) {
@@ -102,104 +103,103 @@ int main(int argc, char** argv) {
             }
         }
         store_number(active_mode, number_buffer);
-    }
 
-    for (auto& op: operations) {
-        std::visit(overloaded {
-            [](number_t arg) { std::cout << arg.value; },
-            [](open_paren_t) { std::cout << "("; },
-            [](close_paren_t) { std::cout << ")"; },
-            [](add_t) { std::cout << " + "; },
-            [](multiply_t) { std::cout << " * "; },
-            [](sub_t) { std::cout << " - "; },
-        }, op);
-    }
-
-    std::cout << "\n";
-
-    std::queue<operation_t> output;
-    std::stack<operation_t> op_stack;
-    for (auto& op: operations) {
-        std::visit(overloaded {
-            [&output](number_t arg) {
-                output.push(arg);
-            },
-            [&op_stack](open_paren_t) {
-                op_stack.push(open_paren_t{});
-            },
-            [&op_stack, &output](close_paren_t) {
-                while (!std::holds_alternative<open_paren_t>(op_stack.top())) {
-                    operation_t op = op_stack.top();
-                    op_stack.pop();
-                    output.push(op);
-                }
-                if (std::holds_alternative<open_paren_t>(op_stack.top())) {
-                    op_stack.pop();
-                }
-            },
-            [&op_stack, &output](add_t) {
-                while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
-                    || std::holds_alternative<multiply_t>(op_stack.top()))) {
-                    operation_t op = op_stack.top();
-                    op_stack.pop();
-                    output.push(op);
-                }
-                op_stack.push(add_t{});
-            },
-            [&op_stack, &output](multiply_t) {
-                while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
-                    || std::holds_alternative<multiply_t>(op_stack.top()))) {
-                    operation_t op = op_stack.top();
-                    op_stack.pop();
-                    output.push(op);
-                }
-                op_stack.push(multiply_t{});
-            },
-            [&op_stack](sub_t) {
-                op_stack.push(sub_t{});
-            },
-        }, op);
-    }
-
-    while (!op_stack.empty()) {
-        operation_t op = op_stack.top();
-        output.push(op);
-        op_stack.pop();
-    }
-
-    std::stack<operation_t> rp;
-    while (!output.empty()) {
-        operation_t op = output.front();
-        output.pop();
-
-        if (std::holds_alternative<number_t>(op)) {
-            rp.push(op);
-            continue;
+        for (auto& op: operations) {
+            std::visit(overloaded {
+                [](number_t arg) { std::cout << arg.value; },
+                [](open_paren_t) { std::cout << "("; },
+                [](close_paren_t) { std::cout << ")"; },
+                [](add_t) { std::cout << " + "; },
+                [](multiply_t) { std::cout << " * "; },
+                [](sub_t) { std::cout << " - "; },
+            }, op);
         }
 
-        if (std::holds_alternative<multiply_t>(op)) {
-            operation_t op1 = rp.top();
-            rp.pop();
-            operation_t op2 = rp.top();
-            rp.pop();
-            auto res = number_t{std::get<number_t>(op1).value * std::get<number_t>(op2).value};
-            rp.push(res);
+        std::cout << "\n";
+
+        std::queue<operation_t> output;
+        std::stack<operation_t> op_stack;
+        for (auto& op: operations) {
+            std::visit(overloaded {
+                [&output](number_t arg) {
+                    output.push(arg);
+                },
+                [&op_stack](open_paren_t) {
+                    op_stack.push(open_paren_t{});
+                },
+                [&op_stack, &output](close_paren_t) {
+                    while (!std::holds_alternative<open_paren_t>(op_stack.top())) {
+                        operation_t op = op_stack.top();
+                        op_stack.pop();
+                        output.push(op);
+                    }
+                    if (std::holds_alternative<open_paren_t>(op_stack.top())) {
+                        op_stack.pop();
+                    }
+                },
+                [&op_stack, &output](add_t) {
+                    while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
+                        || std::holds_alternative<multiply_t>(op_stack.top()))) {
+                        operation_t op = op_stack.top();
+                        op_stack.pop();
+                        output.push(op);
+                    }
+                    op_stack.push(add_t{});
+                },
+                [&op_stack, &output](multiply_t) {
+                    while (!op_stack.empty() && (std::holds_alternative<add_t>(op_stack.top())
+                        || std::holds_alternative<multiply_t>(op_stack.top()))) {
+                        operation_t op = op_stack.top();
+                        op_stack.pop();
+                        output.push(op);
+                    }
+                    op_stack.push(multiply_t{});
+                },
+                [&op_stack](sub_t) {
+                    op_stack.push(sub_t{});
+                },
+            }, op);
         }
 
-        if (std::holds_alternative<add_t>(op)) {
-            operation_t op1 = rp.top();
-            rp.pop();
-            operation_t op2 = rp.top();
-            rp.pop();
-            auto res = number_t{std::get<number_t>(op1).value + std::get<number_t>(op2).value};
-            rp.push(res);
+        while (!op_stack.empty()) {
+            operation_t op = op_stack.top();
+            output.push(op);
+            op_stack.pop();
         }
+
+        std::stack<operation_t> rp;
+        while (!output.empty()) {
+            operation_t op = output.front();
+            output.pop();
+
+            if (std::holds_alternative<number_t>(op)) {
+                rp.push(op);
+                continue;
+            }
+
+            if (std::holds_alternative<multiply_t>(op)) {
+                operation_t op1 = rp.top();
+                rp.pop();
+                operation_t op2 = rp.top();
+                rp.pop();
+                auto res = number_t{std::get<number_t>(op1).value * std::get<number_t>(op2).value};
+                rp.push(res);
+            }
+
+            if (std::holds_alternative<add_t>(op)) {
+                operation_t op1 = rp.top();
+                rp.pop();
+                operation_t op2 = rp.top();
+                rp.pop();
+                auto res = number_t{std::get<number_t>(op1).value + std::get<number_t>(op2).value};
+                rp.push(res);
+            }
+        }
+
+        part1 += std::get<number_t>(rp.top()).value;
     }
 
-    std::cout << "part1: " << std::get<number_t>(rp.top()).value << '\n';
-
-    // parse lines
-    // 1 + (2 * 3) + (4 * (5 + 6))
+    std::cout << "part1: " << part1 << '\n';
 
     return 0;
 }
