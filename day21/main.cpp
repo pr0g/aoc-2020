@@ -123,6 +123,12 @@ int main(int argc, char **argv)
         allergen_ingredients.push_back(unique.second.front());
     }
 
+    std::vector<std::pair<std::string, std::string>> allergen_ingredient_pairs;
+    allergen_ingredient_pairs.reserve(unique_ingredients.size());
+    for (const auto& unique : unique_ingredients) {
+        allergen_ingredient_pairs.emplace_back(unique.first, unique.second.front());
+    }
+
     int64_t count = 0;
     for (const auto& recipe : recipes) {
         for (const auto& ingredient : recipe.ingredients) {
@@ -132,6 +138,10 @@ int main(int argc, char **argv)
             }
         }
     }
+
+    std::sort(allergen_ingredient_pairs.begin(), allergen_ingredient_pairs.end(), [](const auto& lhs, const auto& rhs) {
+        return lhs.first < rhs.first;
+    });
 
     std::vector<std::string> no_allergens;
 //    for (auto& recipe : recipes) {
@@ -214,6 +224,12 @@ int main(int argc, char **argv)
      }
 
      std::cout << "part1: " << count << "\n";
+
+     std::cout << "part2: ";
+     for (const auto& ingredient : allergen_ingredient_pairs) {
+         std::cout << ingredient.second << ",";
+     }
+     std::cout << '\n';
 
     return 0;
 }
