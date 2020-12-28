@@ -12,43 +12,70 @@
 #include <variant>
 #include <functional>
 #include <queue>
+#include <list>
 
-std::vector<int64_t> wrap_transfer_n(std::vector<int64_t>& vec, size_t index, size_t n) {
-    std::vector<int64_t> result;
+std::list<int64_t> splice_some(
+    std::list<int64_t>& list,
+    std::list<int64_t>::iterator pos, size_t n) {
+    std::list<int64_t> result;
+
+    auto next = pos;
+    auto nn = *next;
     for (size_t count = 0; count < n; count++) {
-        size_t lookup = (index + count) % vec.size();
-        result.push_back(vec[lookup]);
+        result.push_back(*next);
+        next = std::next(next, 1);
+        nn = *next;
+        if (next == list.end()) {
+            next = list.begin();
+        }
     }
-    vec.erase(std::remove_if(vec.begin(), vec.end(), [&](const auto cup) {
+
+    list.erase(std::remove_if(list.begin(), list.end(), [&](const auto cup) {
         return std::find(result.begin(), result.end(), cup) != result.end();
-    }), vec.end());
+    }), list.end());
+
     return result;
 }
 
 int main(int argc, char **argv)
 {
-//    const std::vector<int64_t> all_cups{3,8,9,1,2,5,4,6,7}; // test
-    const std::vector<int64_t> all_cups{4,7,6,1,3,8,2,5,9};
+    std::list<int64_t> all_cups{3,8,9,1,2,5,4,6,7}; // test
+    std::unordered_map<int64_t, std::list<int64_t>::iterator> cup_lookup;
+//    std::list<int64_t> all_cups{4,7,6,1,3,8,2,5,9};
     const auto min_elem = std::min_element(all_cups.begin(), all_cups.end());
-    const auto max_elem = std::max_element(all_cups.begin(), all_cups.end());
-    
-    // puzzle - 476138259
-    std::vector<int64_t> cup_circle{all_cups};
+    auto max_elem = std::max_element(all_cups.begin(), all_cups.end());
 
-    for (const auto& cup : cup_circle) {
-        std::cout << cup << '\n';
+//    all_cups.resize(1000000);
+//    int64_t max = *max_elem;
+//    for (auto cup_it = std::next(all_cups.begin(), 9);
+//        cup_it != all_cups.end(); ++cup_it) {
+//        *cup_it = ++max;
+//    }
+
+    for (auto cup_it = all_cups.begin(); cup_it != all_cups.end(); ++cup_it) {
+        cup_lookup[*cup_it] = cup_it;
     }
 
-    std::cout << "---\n";
+    max_elem = std::max_element(all_cups.begin(), all_cups.end());
+    std::list<int64_t> cup_circle{all_cups};
 
     int64_t turns = 0;
-    int64_t current_cup = cup_circle[0];
+    int64_t current_cup = cup_circle.front();
     while (turns < 100) {
-        auto current_cup_it = std::find(
-            cup_circle.begin(), cup_circle.end(), current_cup);
+//        auto current_cup_it = cup_lookup.find(current_cup);
+//        auto next_cup_it = ++current_cup_it->second;
+        auto current_cup_it = std::find(cup_circle.begin(), cup_circle.end(), current_cup);
+        auto next_cup_it = std::next(current_cup_it, 1);
+        if (next_cup_it == cup_circle.end()) {
+            next_cup_it = cup_circle.begin();
+        }
+//        auto t = *next_cup_it;
+        std::list<int64_t> held_cups = splice_some(cup_circle, next_cup_it, 3);
 
-        std::vector<int64_t> held_cups = wrap_transfer_n(
-            cup_circle, std::distance(cup_circle.begin(), current_cup_it + 1), 3);
+//        for (const auto cup : cup_circle) {
+//            std::cout << cup << ", ";
+//        }
+//        std::cout << std::endl;
 
         auto destination_cup = current_cup - 1;
         while (true) {
@@ -63,25 +90,21 @@ int main(int argc, char **argv)
                 auto destination_in_circle = std::find(
                     cup_circle.begin(), cup_circle.end(), destination_cup);
 
-                auto dist = std::distance(cup_circle.begin(), destination_in_circle);
-
-                if (dist >= cup_circle.size()) {
-                    destination_in_circle = cup_circle.end();
-                } else {
-                    destination_in_circle = destination_in_circle + 1;
+                destination_in_circle = std::next(destination_in_circle, 1);
+                if (destination_in_circle == cup_circle.end()) {
+                    destination_in_circle = cup_circle.begin();
                 }
 
-                auto cup_circle_before = cup_circle;
-                cup_circle.insert(destination_in_circle, held_cups.begin(), held_cups.end());
+                cup_circle.insert(
+                    destination_in_circle, held_cups.begin(), held_cups.end());
 
                 break;
             }
         }
 
-        current_cup_it = std::find(
-            cup_circle.begin(), cup_circle.end(), current_cup);
+        current_cup_it = std::find(cup_circle.begin(), cup_circle.end(), current_cup);
+        next_cup_it = std::next(current_cup_it, 1);
 
-        auto next_cup_it = current_cup_it + 1;
         if (next_cup_it == cup_circle.end()) {
             next_cup_it = cup_circle.begin();
         }
@@ -89,13 +112,25 @@ int main(int argc, char **argv)
         turns++;
     }
 
-    auto counter = 0;
     auto one = std::find(cup_circle.begin(), cup_circle.end(), 1);
-    for (const auto offset = std::distance(cup_circle.begin(), one) + 1;
-        counter < cup_circle.size() - 1; counter++) {
-        std::cout << cup_circle[(offset + counter) % cup_circle.size()];
-    }
 
+//    auto after_one = ++one;
+//    auto another_after_one = ++after_one;
+//    int64_t total = *after_one * *another_after_one;
+
+//    std::cout << "after on: " << *after_one
+//              << " another after: " << *another_after_one
+//              << " total: " << total << '\n';
+
+    size_t counter = 0;
+    for (auto offset = std::next(one, 1);
+        counter < cup_circle.size() - 1; counter++) {
+        std::cout << *offset;
+        offset = std::next(offset, 1);
+        if (offset == cup_circle.end()) {
+            offset = cup_circle.begin();
+        }
+    }
     std::cout << '\n';
 
     return 0;
