@@ -35,12 +35,15 @@ struct offset_t {
     int vertical = 0;
 };
 
-bool operator==(const offset_t& lhs, const offset_t& rhs)
-{
+bool operator==(const offset_t& lhs, const offset_t& rhs) {
     return lhs.horizontal == rhs.horizontal && lhs.vertical == rhs.vertical;
 }
 
-int main(int argc, char **argv)
+offset_t operator+(const offset_t& lhs, const offset_t& rhs) {
+    return {lhs.horizontal + rhs.horizontal, lhs.vertical + rhs.vertical};
+}
+
+int main(int, char**)
 {
     std::ifstream reader("input.txt");
     std::vector<std::string> lines;
@@ -105,10 +108,8 @@ int main(int argc, char **argv)
         std::cout << "\n";
     }
 
-    struct offset_hash_t
-    {
-        std::size_t operator()(const offset_t& offset) const noexcept
-        {
+    struct offset_hash_t {
+        std::size_t operator()(const offset_t& offset) const {
             std::size_t seed;
             hash_combine(seed, offset.horizontal);
             hash_combine(seed, offset.vertical);
@@ -149,8 +150,24 @@ int main(int argc, char **argv)
         if (auto it = tiles.find(offset);
             it != tiles.end()) {
             it->second = !it->second;
+            offset_t offsets[] = { {2, 0}, {-2, 0}, {-1, 1}, {-1, -1}, {1, 1}, {1, -1}};
+            for (const auto& neighbor_offset : offsets) {
+                auto next_offset = offset + neighbor_offset;
+                if (auto next_it = tiles.find(next_offset);
+                    next_it == tiles.end()) {
+                    tiles.insert({next_offset, true});
+                }
+            }
         } else {
             tiles.insert({offset, false});
+            offset_t offsets[] = { {2, 0}, {-2, 0}, {-1, 1}, {-1, -1}, {1, 1}, {1, -1}};
+            for (const auto& neighbor_offset : offsets) {
+                auto next_offset = offset + neighbor_offset;
+                if (auto next_it = tiles.find(next_offset);
+                    next_it == tiles.end()) {
+                    tiles.insert({next_offset, true});
+                }
+            }
         }
     }
 
@@ -162,6 +179,73 @@ int main(int argc, char **argv)
     }
 
     std::cout << "part 1: " << count << '\n';
+
+    auto neighbor_fn = [&](const offset_t& offset) {
+        int64_t count = 0;
+        offset_t offsets[] = { {2, 0}, {-2, 0}, {-1, 1}, {-1, -1}, {1, 1}, {1, -1}};
+        for (const auto& neighbor_offset : offsets) {
+            auto next_offset = offset + neighbor_offset;
+            if (auto it = tiles.find(next_offset);
+                it != tiles.end()) {
+                if (!it->second) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    };
+
+    // all start as white (true)
+    // flipped to black (false)
+    for (int day = 0; day < 100; day++) {
+        std::vector<offset_t> offsets;
+        for (auto& tile : tiles) {
+            if (!tile.second) {
+                auto black_neighbors = neighbor_fn(tile.first);
+                if (black_neighbors == 0 || black_neighbors > 2) {
+                    offsets.push_back(tile.first);
+                }
+            } else {
+                auto black_neighbors = neighbor_fn(tile.first);
+                if (black_neighbors == 2) {
+                    offsets.push_back(tile.first);
+                }
+            }
+        }
+
+        for (const auto& offset : offsets) {
+            tiles[offset] = !tiles[offset];
+        }
+
+        int64_t black_tiles = 0;
+        for (auto& tile : tiles) {
+            if (!tile.second) {
+                black_tiles++;
+            }
+        }
+
+        offsets.clear();
+        for (const auto& tile : tiles) {
+            if (tile.second) { continue; }
+            offset_t offs[] = { {2, 0}, {-2, 0}, {-1, 1}, {-1, -1}, {1, 1}, {1, -1}};
+            for (const auto& neighbor_offset : offs) {
+                auto next_offset = tile.first + neighbor_offset;
+                if (auto next_it = tiles.find(next_offset);
+                    next_it == tiles.end()) {
+                    offsets.push_back(next_offset);
+                }
+            }
+        }
+
+        for (const auto& off : offsets) {
+            tiles.insert({off, true});
+        }
+
+        if (day == 99) {
+            std::cout << "part 2: " << black_tiles << '\n';
+        }
+
+    }
 
     return 0;
 }
