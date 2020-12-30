@@ -29,7 +29,7 @@ struct rule_t
 using rules_t = std::vector<rule_t>;
 
 void recurse_me(
-    const rules_t& rules, const key_groups_t& key_groups, std::ostream& os) {
+    const rules_t& rules, const key_groups_t& key_groups, std::ostream& os, int depth) {
     for (int key_group_index = 0; key_group_index < key_groups.size(); ++key_group_index) {
         const auto& key_group = key_groups[key_group_index];
         for (const auto& key : key_group) {
@@ -40,7 +40,9 @@ void recurse_me(
             if (std::holds_alternative<key_groups_t>(rule_it->value)) {
                 os << "(?:";
                 key_groups_t inner_key_group = std::get<key_groups_t>(rule_it->value);
-                recurse_me(rules, inner_key_group, os);
+                if (depth < 100) {
+                    recurse_me(rules, inner_key_group, os, depth + 1);
+                }
                 os << ")";
             } else {
                 char character = std::get<char>(rule_it->value);
@@ -170,7 +172,8 @@ int main(int argc, char **argv)
 
     key_groups_t key_group = std::get<key_groups_t>(rule_zero->value);
     std::stringstream ss;
-    recurse_me(rules, key_group, ss);
+    int depth = 0;
+    recurse_me(rules, key_group, ss, depth);
     std::cout << ss.str() << '\n';
 
     const std::regex pattern(ss.str());
