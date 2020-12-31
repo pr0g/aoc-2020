@@ -19,6 +19,8 @@ int main(int, char**)
 {
     std::ifstream reader("input.txt");
 
+    using image_t = as::mat<char, 8>;
+    using scan_t = as::vec<char, 8>;
     using grid_t = as::mat<char, 10>;
     using basis_t = as::vec<char, 10>;
 
@@ -58,6 +60,7 @@ int main(int, char**)
     {
         int id = -1;
         grid_t grid;
+        image_t image;
 
         vec2_t dirs[4] = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
         int dir_chks[4] = {0, 1, 2, 3};
@@ -194,11 +197,23 @@ int main(int, char**)
 //        return tile;
 //    };
 
-    auto print_tile = [](const tile_t& tile){
+    auto print_grid = [](const tile_t& tile){
         std::cout << "---\n";
         for (int r = 0; r < 10; ++r) {
             auto row = as::mat_row(tile.grid, r);
             for (int c = 0; c < 10; ++c) {
+                std::cout << row[c];
+            }
+            std::cout << '\n';
+        }
+        std::cout << "---\n";
+    };
+
+    auto print_image = [](const tile_t& tile){
+        std::cout << "---\n";
+        for (int r = 0; r < 8; ++r) {
+            auto row = as::mat_row(tile.image, r);
+            for (int c = 0; c < 8; ++c) {
                 std::cout << row[c];
             }
             std::cout << '\n';
@@ -330,10 +345,10 @@ int main(int, char**)
 
                                     pinned_tiles.push_back(available_tiles[tile_index]);
 
-                                    std::cout << "()()()()" << "\n";
-                                    print_tile(pinned_tiles[pinned_tile_index]);
-                                    print_tile(pinned_tiles.back());
-                                    std::cout << "()()()()" << std::endl;
+//                                    std::cout << "()()()()" << "\n";
+//                                    print_grid(pinned_tiles[pinned_tile_index]);
+//                                    print_grid(pinned_tiles.back());
+//                                    std::cout << "()()()()" << std::endl;
 
 //                                    pinned_tiles.back().s = s;
 //                                    pinned_tiles.back().f = f;
@@ -346,10 +361,10 @@ int main(int, char**)
                                         return pinned_tiles[pinned_tile_index].id == tile_pos.id;
                                     });
 
-                                    std::cout << "pinned - id:  " << pinned_tiles[pinned_tile_index].id << '\n';
-                                    print_dirs(pinned_tiles[pinned_tile_index].dirs, 4);
-                                    std::cout << "next - id:  " << pinned_tiles.back().id << '\n';
-                                    print_dirs(pinned_tiles.back().dirs, 4);
+//                                    std::cout << "pinned - id:  " << pinned_tiles[pinned_tile_index].id << '\n';
+//                                    print_dirs(pinned_tiles[pinned_tile_index].dirs, 4);
+//                                    std::cout << "next - id:  " << pinned_tiles.back().id << '\n';
+//                                    print_dirs(pinned_tiles.back().dirs, 4);
 
 //                                    int current_s = s + pinned_tiles[pinned_tile_index].right_rotations;
 //                                    if (pinned_tiles[pinned_tile_index].flipped) {
@@ -409,6 +424,70 @@ int main(int, char**)
 loop:
         (void)sizeof(int);
     }
+
+    auto min_x = std::min_element(
+        tile_positions.begin(), tile_positions.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.pos.x < rhs.pos.x;
+        });
+
+    auto max_x = std::max_element(
+        tile_positions.begin(), tile_positions.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.pos.x < rhs.pos.x;
+        });
+
+    auto min_y = std::min_element(
+        tile_positions.begin(), tile_positions.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.pos.y < rhs.pos.y;
+        });
+
+    auto max_y = std::max_element(
+        tile_positions.begin(), tile_positions.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.pos.y < rhs.pos.y;
+        });
+
+    for (int y = min_y->pos.y; y <= max_y->pos.y; ++y) {
+        for (int x = min_x->pos.x; x <= max_x->pos.x; ++x) {
+            if (auto tile_pos = std::find_if(
+                tile_positions.begin(), tile_positions.end(), [x, y](const tile_position_t& tile_p) {
+                    return tile_p.pos.x == x && tile_p.pos.y == y;
+            }); tile_pos != tile_positions.end()) {
+                std::cout << tile_pos->id << " ";
+            }
+        }
+        std::cout << '\n';
+    }
+    std::cout << std::endl;
+
+    for (tile_t& tile : pinned_tiles) {
+        for (int r = 1, m = 0; r < 9; ++r, ++m) {
+            scan_t scan;
+            basis_t basis = as::mat_row(tile.grid, r);
+            for (int c = 1, i = 0; c < 9; c++, i++) {
+                scan[i] = basis[c];
+            }
+            as::mat_row(tile.image, m, scan);
+        }
+    }
+
+    std::cout << "--------\n";
+
+    for (int y = min_y->pos.y; y <= max_y->pos.y; ++y) {
+        for (int x = min_x->pos.x; x <= max_x->pos.x; ++x) {
+            if (auto tile_pos = std::find_if(
+                tile_positions.begin(), tile_positions.end(), [x, y](const tile_position_t& tile_p) {
+                    return tile_p.pos.x == x && tile_p.pos.y == y;
+            }); tile_pos != tile_positions.end()) {
+                if (auto t = std::find_if(pinned_tiles.begin(), pinned_tiles.end(),
+                    [tile_pos](const tile_t& t) {
+                    return t.id == tile_pos->id;
+                }); t != pinned_tiles.end()) {
+                     print_image(*t);
+                }
+            }
+        }
+        std::cout << '\n';
+    }
+    std::cout << std::endl;
 
     int64_t product = 1;
     for (const auto id : corner_ids) {
