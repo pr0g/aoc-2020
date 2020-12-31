@@ -474,7 +474,8 @@ loop:
     for (int y = min_y->pos.y; y <= max_y->pos.y; ++y) {
         for (int x = min_x->pos.x; x <= max_x->pos.x; ++x) {
             if (auto tile_pos = std::find_if(
-                tile_positions.begin(), tile_positions.end(), [x, y](const tile_position_t& tile_p) {
+                tile_positions.begin(), tile_positions.end(),
+                [x, y](const tile_position_t& tile_p) {
                     return tile_p.pos.x == x && tile_p.pos.y == y;
             }); tile_pos != tile_positions.end()) {
                 if (auto t = std::find_if(pinned_tiles.begin(), pinned_tiles.end(),
@@ -487,24 +488,135 @@ loop:
         }
         std::cout << '\n';
     }
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
     std::cout << std::endl;
 
-    int64_t product = 1;
-    for (const auto id : corner_ids) {
-        std::cout << id << '\n';
-        product *= id;
+    // ---
+
+    constexpr as::index full_image_size = 96;
+    using full_image_t = as::mat<char, full_image_size>;
+
+    full_image_t image;
+
+    int row = 0;
+    for (int y = min_y->pos.y; y <= max_y->pos.y; ++y) {
+        for (int r = 0; r < scan_t::size(); ++r) {
+            int col = 0;
+            for (int x = min_x->pos.x; x <= max_x->pos.x; ++x) {
+                if (auto tile_pos = std::find_if(
+                    tile_positions.begin(), tile_positions.end(),
+                    [x, y](const tile_position_t& tile_p) {
+                        return tile_p.pos.x == x && tile_p.pos.y == y;
+                }); tile_pos != tile_positions.end()) {
+                    if (auto t = std::find_if(pinned_tiles.begin(), pinned_tiles.end(),
+                        [tile_pos](const tile_t& t) {
+                        return t.id == tile_pos->id;
+                    }); t != pinned_tiles.end()) {
+                        auto mat_row = as::mat_row(t->image, r);
+                        for (int c = 0; c < scan_t::size(); ++c) {
+                            std::cout << mat_row[c];
+                            image[as::mat_rc(row, col++, full_image_size)] = mat_row[c];
+                        }
+                    }
+                }
+            }
+            std::cout << '\n';
+            row++;
+        }
+    }
+    std::cout << std::endl;
+
+    // ---
+
+    auto print_img = [](const full_image_t& image) {
+        for (int r = 0; r < full_image_size; r++) {
+            for (int c = 0; c < full_image_size; c++) {
+                std::cout << image[as::mat_rc(r, c, full_image_size)];
+            }
+            std::cout << '\n';
+        }
+    };
+
+    auto rotate_image = [](const full_image_t& image) {
+        auto rotated_image = as::mat_transpose(image);
+        for (int r = 0; r < full_image_size; ++r) {
+            auto row = as::mat_row(rotated_image, r);
+            std::reverse(&row[0], &row[0] + full_image_size);
+            as::mat_row(rotated_image, r, row);
+        }
+        return rotated_image;
+    };
+
+    auto flip_image = [](const full_image_t& image) {
+        auto flipped_image = image;
+        for (int r = 0; r < full_image_size; ++r) {
+            auto row = as::mat_row(flipped_image, r);
+            std::reverse(&row[0], &row[0] + full_image_size);
+            as::mat_row(flipped_image, r, row);
+        }
+        return flipped_image;
+    };
+
+    auto find_seamonsters = [](const full_image_t& image) {
+        int monsters = 0;
+        for (int r = 1; r < full_image_t::rows(); ++r) {
+            for (int c = 0; c < full_image_t::cols() - 20; ++c) {
+                if (    image[as::mat_rc(r, c, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 5, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 6, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 11, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 12, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 17, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 18, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r, c + 19, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r + 1, c + 1, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r + 1, c + 4, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r + 1, c + 7, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r + 1, c + 10, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r + 1, c + 13, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r + 1, c + 16, full_image_size)] == '#'
+                    &&  image[as::mat_rc(r - 1, c + 18, full_image_size)] == '#') {
+                    monsters++;
+                }
+            }
+        }
+        return monsters;
+    };
+
+    auto total_seamonsters = 0;
+    auto next_image = image;
+    for (int f = 0; f < 2; ++f) {
+        for (int r = 0; r < 5; ++r) {
+            std::cout << "r: " << r << " f: " << f << '\n';
+            print_img(next_image);
+            auto monsters = find_seamonsters(next_image);
+            if (monsters > 0) {
+                std::cout << "monsters: " << monsters << "\n";
+                total_seamonsters = monsters;
+                goto end;
+            }
+            next_image = rotate_image(next_image);
+            std::cout << "---\n";
+        }
+        next_image = flip_image(next_image);
+        std::cout << "---\n";
     }
 
-    std::cout << "part 1: " << product << '\n';
+end:
 
-//    for (auto& tile : tiles) {
-//        tile.grid.pop_back();
-//        tile.grid.erase(tile.grid.begin());
-//        for (auto& row : tile.grid) {
-//            row.erase(row.begin());
-//            row.pop_back();
-//        }
-//    }
+    auto total_octothorpe = 0;
+    for (int r = 0; r < full_image_t::rows(); ++r) {
+        for (int c = 0; c < full_image_t::cols(); ++c) {
+            if (next_image[as::mat_rc(r, c, full_image_size)] == '#') {
+                total_octothorpe++;
+            }
+        }
+    }
+
+    std::cout << "part 2: " << total_octothorpe - (total_seamonsters * 15) << '\n';
 
     return 0;
 }
