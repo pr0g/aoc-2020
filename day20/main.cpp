@@ -24,15 +24,6 @@ int main(int, char**)
     using grid_t = as::mat<char, 10>;
     using basis_t = as::vec<char, 10>;
 
-    auto basis_equal = [](const basis_t& lhs, const basis_t& rhs) {
-        for (int i = 0; i < 10; ++i) {
-            if (lhs[i] != rhs[i]) {
-                return false;
-            }
-        }
-        return true;
-    };
-
     enum side_e {
         top,
         right,
@@ -84,24 +75,15 @@ int main(int, char**)
             }
             return basis_t{};
         }
-
-        bool operator==(const tile_t& tile) const {
-            for (int i = 0; i < grid_t::size(); ++i) {
-                if (tile.grid[i] != grid[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
     };
 
     auto rotate_right = [](const tile_t& tile_in) {
         tile_t tile = tile_in;
         tile.rotate_right();
         tile.grid = as::mat_transpose(tile.grid);
-        for (int r = 0; r < 10; ++r) {
+        for (int r = 0; r < tile.grid.dim(); ++r) {
             auto row = as::mat_row(tile.grid, r);
-            std::reverse(&row[0], &row[0] + 10);
+            std::reverse(as::begin(row), as::end(row));
             as::mat_row(tile.grid, r, row);
         }
         return tile;
@@ -110,9 +92,9 @@ int main(int, char**)
     auto flip_horizontal = [](const tile_t& tile_in) {
         tile_t tile = tile_in;
         tile.flip();
-        for (int r = 0; r < 10; ++r) {
+        for (int r = 0; r < tile.grid.dim(); ++r) {
             auto row = as::mat_row(tile.grid, r);
-            std::reverse(&row[0], &row[0] + 10);
+            std::reverse(as::begin(row), as::end(row));
             as::mat_row(tile.grid, r, row);
         }
         return tile;
@@ -120,9 +102,9 @@ int main(int, char**)
 
     auto print_grid = [](const tile_t& tile){
         std::cout << "---\n";
-        for (int r = 0; r < 10; ++r) {
+        for (int r = 0; r < tile.grid.dim(); ++r) {
             auto row = as::mat_row(tile.grid, r);
-            for (int c = 0; c < 10; ++c) {
+            for (int c = 0; c < tile.grid.dim(); ++c) {
                 std::cout << row[c];
             }
             std::cout << '\n';
@@ -172,8 +154,8 @@ int main(int, char**)
         }
         break;
         case mode_e::grid: {
-            as::vec<char, 10> row;
-            for (int i = 0; i < as::vec<char, 10>::size(); ++i) {
+            basis_t row;
+            for (int i = 0; i < basis_t::size(); ++i) {
                 row[i] = line[i];
             }
             as::mat_row(active_tile.grid, grid_row++, row);
@@ -187,9 +169,9 @@ int main(int, char**)
     // check input
     for (const auto& tile : tiles) {
         std::cout << "tile: " << tile.id << '\n';
-        for (int r = 0; r < 10; ++r) {
+        for (int r = 0; r < tile.grid.dim(); ++r) {
             auto row = as::mat_row(tile.grid, r);
-            for (int c = 0; c < 10; ++c) {
+            for (int c = 0; c < tile.grid.dim(); ++c) {
                 std::cout << row[c];
             }
             std::cout << '\n';
@@ -229,9 +211,8 @@ int main(int, char**)
                         for (int f = 0; f < 2; ++f) {
                             for (int r = 0; r < 4; ++r) {
                                 auto opposite_side = (s + 2) % 4;
-                                if (basis_equal(
-                                    pinned_tiles[pinned_tile_index].side((side_e)s),
-                                    available_tiles[tile_index].side((side_e)opposite_side))) {
+                                if (pinned_tiles[pinned_tile_index].side((side_e)s) ==
+                                    available_tiles[tile_index].side((side_e)opposite_side)) {
 
                                     pinned_tiles.push_back(available_tiles[tile_index]);
 
@@ -375,7 +356,7 @@ loop:
         auto rotated_image = as::mat_transpose(image);
         for (int r = 0; r < full_image_size; ++r) {
             auto row = as::mat_row(rotated_image, r);
-            std::reverse(&row[0], &row[0] + full_image_size);
+            std::reverse(as::begin(row), as::end(row));
             as::mat_row(rotated_image, r, row);
         }
         return rotated_image;
@@ -385,7 +366,7 @@ loop:
         auto flipped_image = image;
         for (int r = 0; r < full_image_size; ++r) {
             auto row = as::mat_row(flipped_image, r);
-            std::reverse(&row[0], &row[0] + full_image_size);
+            std::reverse(as::begin(row), as::end(row));
             as::mat_row(flipped_image, r, row);
         }
         return flipped_image;
